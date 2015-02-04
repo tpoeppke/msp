@@ -1,0 +1,154 @@
+%% LaTeX-Beamer template for KIT design
+%% by Erik Burger, Christian Hammer
+%% title picture by Klaus Krogmann
+%%
+%% version 2.1
+%%
+%% mostly compatible to KIT corporate design v2.0
+%% http://intranet.kit.edu/gestaltungsrichtlinien.php
+%%
+%% Problems, bugs and comments to
+%% burger@kit.edu
+
+\documentclass[18pt]{beamer}
+
+%% SLIDE FORMAT
+
+% use 'beamerthemekit' for standard 4:3 ratio
+% for widescreen slides (16:9), use 'beamerthemekitwide'
+
+\usepackage{templates/beamerthemekit}
+% \usepackage{templates/beamerthemekitwide}
+
+%% TITLE PICTURE
+
+% if a custom picture is to be used on the title page, copy it into the 'logos'
+% directory, in the line below, replace 'mypicture' with the 
+% filename (without extension) and uncomment the following line
+% (picture proportions: 63 : 20 for standard, 169 : 40 for wide
+% *.eps format if you use latex+dvips+ps2pdf, 
+% *.jpg/*.png/*.pdf if you use pdflatex)
+
+%\titleimage{mypicture}
+
+%% TITLE LOGO
+
+% for a custom logo on the front page, copy your file into the 'logos'
+% directory, insert the filename in the line below and uncomment it
+
+%\titlelogo{mylogo}
+
+% (*.eps format if you use latex+dvips+ps2pdf,
+% *.jpg/*.png/*.pdf if you use pdflatex)
+
+%% TikZ INTEGRATION
+
+% use these packages for PCM symbols and UML classes
+% \usepackage{templates/tikzkit}
+% \usepackage{templates/tikzuml}
+
+% the presentation starts here
+
+\title[Course Report]{Multilingual Speech Processing:\\ Presentation of Progress}
+\subtitle{Training and Decoding}
+\author{Yao Jiacheng, Tobias P\"oppke}
+
+\institute{Cognitive Systems Lab}
+
+% Bibliography
+
+\usepackage[citestyle=authoryear,bibstyle=numeric,hyperref,backend=biber]{biblatex}
+\addbibresource{templates/example.bib}
+\bibhang1em
+
+\begin{document}
+
+% change the following line to "ngerman" for German style date and logos
+\selectlanguage{english}
+
+%title page
+\begin{frame}
+\titlepage
+\end{frame}
+
+%table of contents
+%\begin{frame}{Outline/Gliederung}
+%\tableofcontents
+%\end{frame}
+
+\begin{frame}{Initialization}
+\begin{itemize}
+\item Create new recognizer with 1 Gaussian
+\item Do k-means flatstart via \texttt{storeTokenSequenceForInit}
+\item Train the recognizer via \texttt{storeTokenSequenceForTrain}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Initialization of next recognizer}
+\begin{itemize}
+\item Increase number of gaussians by 1
+\item Create new recognizer with new number of gaussians
+\item Initialize new recognizer with old recognizer
+\item Get paths via \texttt{forcedSequenceAlignment} from old recognizer
+\item Use \texttt{storePathForInit} on new recognizer
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Training of next recognizer}
+\begin{itemize}
+\item Get paths via \texttt{forcedSequenceAlignment} from old recognizer
+\item Use \texttt{storePathForTrain} on new recognizer
+\item Repeat training five times
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Context-dependent models}
+\begin{itemize}
+\item Initialize clustering with context of 2
+\item Using a maximum of 2000 leaves, minimum of 1000 samples and 5 Gaussians per model
+\item Use paths from the recognizer for \texttt{storePathForClustering}
+\item Run the clustering with \texttt{Recognizer.cluster}
+\item Train the clustered model with \texttt{storeTokenSequenceForTrain}
+\item Problem: segmentation fault when starting to train the model
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Average WER}
+\begin{itemize}
+\item Model with 5 Gaussians
+\item Trained with 5 training iterations
+\item Average WER on development set: 65.24\%
+\item Average WER on our recorded data set: 91.38\%
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Decoding}
+\begin{itemize}
+\item Initialize \texttt{GaussianContainerSet}, \texttt{GaussMixturesSet}, \texttt{AtomManager}, \texttt{MixtureTree} and \texttt{TopologyInfo}
+\item Using stored files from recognizer
+\item Register attribute handlers for \texttt{FILLER}, \texttt{SILENCE} and \texttt{TOKEN\_SCORE} in dictionary
+\item Load n-gram language model via \texttt{CacheTokenSequenceModel}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Decoding II}
+\begin{itemize}
+\item Language model and language model lookahead weight is 22.5
+\item Maximum language model lookahead tree depth is 12
+\item Create \texttt{SearchGraphHandler} and initialize it with needed values
+\item Create a BioKIT \texttt{Decoder}
+\item Use decoder to decode samples
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Computing WER}
+\begin{itemize}
+\item Extract the search results from the decoder
+\item Use \texttt{dictionary.getBaseForm} to get cleaned hypothesis
+\item Use \texttt{align.tokenErrorRateInsDelSubCount} on cleaned hypothesis and reference
+\item Compute $WER = \frac{Ins + Del + Sub}{Words\:in\:Reference}$
+\item To compute average WER update global insertions, deletions, substitutions and words
+\end{itemize}
+\end{frame}
+
+\end{document}
