@@ -18,6 +18,7 @@
 % for widescreen slides (16:9), use 'beamerthemekitwide'
 
 \usepackage{templates/beamerthemekit}
+\usepackage{wasysym}
 % \usepackage{templates/beamerthemekitwide}
 
 %% TITLE PICTURE
@@ -49,9 +50,8 @@
 
 % the presentation starts here
 
-\title[Course Report]{Multilingual Speech Processing:\\ Presentation of Progress}
-\subtitle{Training and Decoding}
-\author{Yao Jiacheng, Tobias P\"oppke}
+\title[Course Report]{Multilingual Speech Processing:\\ Context-Dependent Models}
+\author{Jiacheng Yao, Tobias P\"oppke}
 
 \institute{Cognitive Systems Lab}
 
@@ -78,77 +78,69 @@
 
 \begin{frame}{Initialization}
 \begin{itemize}
-\item Create new recognizer with 1 Gaussian
-\item Do k-means flatstart via \texttt{storeTokenSequenceForInit}
-\item Train the recognizer via \texttt{storeTokenSequenceForTrain}
+\item Context-independent model already trained and available
+\pause \item Load context-independent model from file
+\pause \item Calculate paths for the training audio data
+\pause \item Initialize the context-dependent model with these paths
+\pause \item Build the context-clustering tree
 \end{itemize}
 \end{frame}
 
-\begin{frame}{Initialization of next recognizer}
-\begin{itemize}
-\item Increase number of gaussians by 1
-\item Create new recognizer with new number of gaussians
-\item Initialize new recognizer with old recognizer
-\item Get paths via \texttt{forcedSequenceAlignment} from old recognizer
-\item Use \texttt{storePathForInit} on new recognizer
-\end{itemize}
+\begin{frame}{Initialization Parameters}
+\begin{table}
+\begin{tabular}{l | c | c | c}
+Parameter & English 1 & English 2 & French \\ 
+\hline \hline
+Nr. of Gaussians per Model & 10 & -- & 10 \\
+Clustering Context & 1 & -- & 2 \\
+Max. number of leaves & 2000 & -- & 2000 \\
+Min. number of samples & 500 & -- & 1000
+\end{tabular}
+\end{table}
 \end{frame}
 
-\begin{frame}{Training of next recognizer}
-\begin{itemize}
-\item Get paths via \texttt{forcedSequenceAlignment} from old recognizer
-\item Use \texttt{storePathForTrain} on new recognizer
-\item Repeat training five times
-\end{itemize}
-\end{frame}
 
-\begin{frame}{Context-dependent models}
+\begin{frame}{Training}
 \begin{itemize}
-\item Initialize clustering with context of 2
-\item Using a maximum of 2000 leaves, minimum of 1000 samples and 5 Gaussians per model
-\item Use paths from the recognizer for \texttt{storePathForClustering}
-\item Run the clustering with \texttt{Recognizer.cluster}
-\item Train the clustered model with \texttt{storeTokenSequenceForTrain}
-\item Problem: segmentation fault when starting to train the model
+\item Run iterations of training as in the context-independent case
+\pause \item But only once for the complete context-dependent model
+\pause \item Number of training iterations:
+\begin{itemize}
+\item French: 5
+\item English: 5
 \end{itemize}
-\end{frame}
 
-\begin{frame}{Average WER}
-\begin{itemize}
-\item Model with 5 Gaussians
-\item Trained with 5 training iterations
-\item Average WER on development set: 65.24\%
-\item Average WER on our recorded data set: 91.38\%
 \end{itemize}
 \end{frame}
 
 \begin{frame}{Decoding}
 \begin{itemize}
-\item Initialize \texttt{GaussianContainerSet}, \texttt{GaussMixturesSet}, \texttt{AtomManager}, \texttt{MixtureTree} and \texttt{TopologyInfo}
-\item Using stored files from recognizer
-\item Register attribute handlers for \texttt{FILLER}, \texttt{SILENCE} and \texttt{TOKEN\_SCORE} in dictionary
-\item Load n-gram language model via \texttt{CacheTokenSequenceModel}
+\item The decoding process was the same as with the context-independent model
+\pause \item Average word error rates for English Team:
+\begin{itemize}
+\item Development Set: 44\%
+\item Recorded Data: 84\%
+\end{itemize}
 \end{itemize}
 \end{frame}
 
-\begin{frame}{Decoding II}
+\begin{frame}{Problems}
 \begin{itemize}
-\item Language model and language model lookahead weight is 22.5
-\item Maximum language model lookahead tree depth is 12
-\item Create \texttt{SearchGraphHandler} and initialize it with needed values
-\item Create a BioKIT \texttt{Decoder}
-\item Use decoder to decode samples
+\item Problem 1: Segmentation fault when starting to train the model
+\pause \item Reason was that the models were not properly initialized
+\pause \item Problem 2: No path could be found for decoding
+\pause \item Cause is probably some error during the training
 \end{itemize}
 \end{frame}
 
-\begin{frame}{Computing WER}
+\begin{frame}{Summary}
 \begin{itemize}
-\item Extract the search results from the decoder
-\item Use \texttt{dictionary.getBaseForm} to get cleaned hypothesis
-\item Use \texttt{align.tokenErrorRateInsDelSubCount} on cleaned hypothesis and reference
-\item Compute $WER = \frac{Ins + Del + Sub}{Words\:in\:Reference}$
-\item To compute average WER update global insertions, deletions, substitutions and words
+\item It was interesting to train a real acoustic model
+\pause \item Some problems occured because we didn't know what BioKIT was doing internally
+\pause \item It would have been nice to implement some of the used algorithms
 \end{itemize}
 \end{frame}
+
+
 
 \end{document}
